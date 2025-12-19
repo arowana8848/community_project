@@ -35,7 +35,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         body: const Center(
           child: Text(
-            'af',
+            'Profile-screen',
             style: TextStyle(fontSize: 20, color: Colors.black54),
           ),
         ),
