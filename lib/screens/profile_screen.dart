@@ -55,7 +55,6 @@ class ProfileScreen extends StatelessWidget {
               ),
             );
           },
-          
           onAdd: () {
             Navigator.push(
               context,
