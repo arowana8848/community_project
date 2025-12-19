@@ -1,27 +1,14 @@
-import 'package:community/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:community/screens/explore_screen.dart';
+import 'package:community/screens/addpost_screen.dart';
 import 'package:community/widgets/app_bottom_nav_bar.dart';
 
 const Color kTopBarColor = Color(0xFF9BB7FF);
 const Color kPageBgColor = Color(0xFFEFF3FF);
 
-class AddPostScreen extends StatefulWidget {
-  const AddPostScreen({super.key});
-
-  @override
-  State<AddPostScreen> createState() => _AddPostScreenState();
-}
-
-class _AddPostScreenState extends State<AddPostScreen> {
-  final TextEditingController _postController = TextEditingController();
-
-  @override
-  void dispose() {
-    _postController.dispose();
-    super.dispose();
-  }
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -32,14 +19,13 @@ class _AddPostScreenState extends State<AddPostScreen> {
       ),
       child: Scaffold(
         backgroundColor: kPageBgColor,
-
         appBar: AppBar(
           automaticallyImplyLeading: false,
           centerTitle: true,
           elevation: 0,
           backgroundColor: kTopBarColor,
           title: const Text(
-            'Add a Post',
+            'Profile',
             style: TextStyle(
               color: Colors.black,
               fontSize: 20,
@@ -47,11 +33,14 @@ class _AddPostScreenState extends State<AddPostScreen> {
             ),
           ),
         ),
-
-        body: const SizedBox.shrink(), 
-
+        body: const Center(
+          child: Text(
+            'Profile-screen',
+            style: TextStyle(fontSize: 20, color: Colors.black54),
+          ),
+        ),
         bottomNavigationBar: AppBottomNavBar(
-          selectedIndex: 2, // Add
+          selectedIndex: 4, 
           onBack: () => Navigator.pop(context),
           onHome: () {
             Navigator.popUntil(context, (route) => route.isFirst);
@@ -66,15 +55,15 @@ class _AddPostScreenState extends State<AddPostScreen> {
               ),
             );
           },
-          onAdd: null, // already on AddPost
-          onProfile: () {
+          onAdd: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const ProfileScreen(),
+                builder: (context) => const AddPostScreen(),
               ),
             );
           },
+          onProfile: null, 
         ),
       ),
     );

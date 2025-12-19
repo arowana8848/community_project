@@ -1,3 +1,4 @@
+import 'package:community/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:community/screens/addpost_screen.dart';
@@ -22,7 +23,7 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> {
-  final List<String> _posts = []; // kept for later when you add feed UI
+  final List<String> _posts = []; 
 
   @override
   Widget build(BuildContext context) {
@@ -49,9 +50,10 @@ class _FeedScreenState extends State<FeedScreen> {
           ),
         ),
 
-        body: const SizedBox.shrink(), // empty for now
+        body: const SizedBox.shrink(), 
 
         bottomNavigationBar: AppBottomNavBar(
+          selectedIndex: 1, // Home (or change to another index if Feed is separate)
           onBack: () => Navigator.pop(context),
           onHome: () {
             Navigator.popUntil(context, (route) => route.isFirst);
@@ -79,7 +81,14 @@ class _FeedScreenState extends State<FeedScreen> {
               });
             }
           },
-          onProfile: () {},
+          onProfile: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ProfileScreen(),
+              ),
+            );
+          },
         ),
       ),
     );

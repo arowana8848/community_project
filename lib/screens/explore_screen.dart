@@ -1,3 +1,4 @@
+import 'package:community/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:community/widgets/app_bottom_nav_bar.dart';
 
@@ -11,12 +12,12 @@ class ExploreScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFEFF3FF),
 
-      // TOP BAR (covers full width + status bar, darker color)
+
       appBar: AppBar(
-        automaticallyImplyLeading: false, // no back icon here, you use bottom nav
+        automaticallyImplyLeading: false,
         centerTitle: true,
         elevation: 0,
-        backgroundColor: const Color(0xFF9BB7FF), // darker than page bg
+        backgroundColor: const Color(0xFF9BB7FF),
         title: const Text(
           "Explore Communities",
           style: TextStyle(
@@ -27,16 +28,24 @@ class ExploreScreen extends StatelessWidget {
         ),
       ),
 
-      // EMPTY BODY FOR NOW
+
       body: const SizedBox.shrink(),
 
-      // BOTTOM NAV BAR
+
       bottomNavigationBar: AppBottomNavBar(
+        selectedIndex: 3, // Communities
         onBack: () => Navigator.pop(context),
         onHome: () => Navigator.popUntil(context, (route) => route.isFirst),
         onCommunities: null, // already here
         onAdd: () {},
-        onProfile: () {},
+        onProfile: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(),
+            ),
+          );
+        },
       ),
     );
   }

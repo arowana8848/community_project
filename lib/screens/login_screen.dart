@@ -25,7 +25,6 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                // Back + Title Row
                 Row(
                   children: [
                     IconButton(
@@ -60,12 +59,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 35),
 
-                // Email Label
+
                 const Text("Email or Mobile Number",
                     style: TextStyle(fontSize: 14)),
                 const SizedBox(height: 8),
 
-                // Email Input
                 TextField(
                   controller: emailController,
                   decoration: InputDecoration(
@@ -81,11 +79,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 20),
 
-                // Password Label
                 const Text("Password", style: TextStyle(fontSize: 14)),
                 const SizedBox(height: 8),
 
-                // Password Input
                 TextField(
                   controller: passwordController,
                   obscureText: !isPasswordVisible,
@@ -125,7 +121,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 10),
 
-                // Login Button
                 SizedBox(
                   width: double.infinity,
                   height: 45,
@@ -153,7 +148,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 25),
 
-                // Sign Up Navigation
                 Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

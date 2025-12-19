@@ -26,7 +26,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              /// Back button & title
               Row(
                 children: [
                   IconButton(
@@ -61,7 +60,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 40),
 
-              /// Full Name
               const Text("Full Name", style: TextStyle(fontSize: 14)),
               const SizedBox(height: 8),
               TextField(
@@ -79,7 +77,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 20),
 
-              /// Email / Mobile
               const Text("Email or Mobile Number", style: TextStyle(fontSize: 14)),
               const SizedBox(height: 8),
               TextField(
@@ -97,7 +94,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 20),
 
-              /// Password
               const Text("Password", style: TextStyle(fontSize: 14)),
               const SizedBox(height: 8),
               TextField(
@@ -128,7 +124,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 20),
 
-              /// Confirm Password
               const Text("Confirm Password", style: TextStyle(fontSize: 14)),
               const SizedBox(height: 8),
               TextField(
@@ -159,7 +154,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 30),
 
-              /// Sign Up button
               SizedBox(
                 width: double.infinity,
                 height: 45,
@@ -187,7 +181,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 20),
 
-              /// Login link
               Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,

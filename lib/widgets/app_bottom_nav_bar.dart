@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+
 class AppBottomNavBar extends StatelessWidget {
   final VoidCallback? onBack;
   final VoidCallback? onHome;
   final VoidCallback? onCommunities;
   final VoidCallback? onAdd;
   final VoidCallback? onProfile;
+  final int selectedIndex; 
 
   const AppBottomNavBar({
     super.key,
@@ -14,6 +16,7 @@ class AppBottomNavBar extends StatelessWidget {
     this.onCommunities,
     this.onAdd,
     this.onProfile,
+    required this.selectedIndex,
   });
 
   @override
@@ -29,28 +32,47 @@ class AppBottomNavBar extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onBack,
-            icon: const Icon(Icons.arrow_back, size: 30, color: Colors.white),
+            icon: Icon(
+              Icons.arrow_back,
+              size: 30,
+              color: selectedIndex == 0 ? Colors.black : Colors.white,
+            ),
           ),
           IconButton(
             onPressed: onHome,
-            icon: const Icon(Icons.home, size: 30, color: Colors.white),
+            icon: Icon(
+              Icons.home,
+              size: 30,
+              color: selectedIndex == 1 ? Colors.black : Colors.white,
+            ),
           ),
-             CircleAvatar(
+          CircleAvatar(
             radius: 28,
-            backgroundColor: Colors.white,
+            backgroundColor: selectedIndex == 2 ? Colors.black : Colors.white,
             child: IconButton(
               onPressed: onAdd,
-              icon: const Icon(Icons.add, size: 30, color: Colors.blue),
+              icon: Icon(
+                Icons.add,
+                size: 30,
+                color: selectedIndex == 2 ? Colors.white : Colors.blue,
+              ),
             ),
           ),
           IconButton(
             onPressed: onCommunities,
-            icon: const Icon(Icons.groups, size: 30, color: Colors.white),
+            icon: Icon(
+              Icons.groups,
+              size: 30,
+              color: selectedIndex == 3 ? Colors.black : Colors.white,
+            ),
           ),
-       
           IconButton(
             onPressed: onProfile,
-            icon: const Icon(Icons.person, size: 30, color: Colors.white),
+            icon: Icon(
+              Icons.person,
+              size: 30,
+              color: selectedIndex == 4 ? Colors.black : Colors.white,
+            ),
           ),
         ],
       ),

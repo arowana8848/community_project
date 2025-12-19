@@ -64,7 +64,6 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
       child: Scaffold(
         backgroundColor: kPageBgColor,
 
-        // TOP BAR
         appBar: AppBar(
           automaticallyImplyLeading: false,
           backgroundColor: kTopBarColor,
@@ -96,7 +95,6 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
           children: [
             const SizedBox(height: 8),
 
-            // PAGE VIEW
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -113,7 +111,6 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // IMAGE
                         SizedBox(
                           height: 220,
                           child: Image.asset(
@@ -123,7 +120,6 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                         ),
                         const SizedBox(height: 32),
 
-                        // TITLE
                         Text(
                           page.title,
                           textAlign: TextAlign.center,
@@ -134,7 +130,6 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // DESCRIPTION
                         Text(
                           page.description,
                           textAlign: TextAlign.center,
@@ -152,7 +147,6 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
 
             const SizedBox(height: 16),
 
-            // DOT INDICATORS
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
@@ -173,7 +167,6 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
 
             const SizedBox(height: 24),
 
-            // NEXT / GET STARTED BUTTON
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
