@@ -1,59 +1,31 @@
-import 'package:community/features/auth/presentation/providers/auth_provider.dart';
-import 'package:community/features/auth/presentation/view_model/auth_view_model.dart';
+import 'package:community/features/auth/presentation/state/auth_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:community/features/auth/presentation/provider/auth_provider.dart';
 import 'login_screen.dart';
+import 'package:community/core/widgets/custom_snackbar.dart';
 
-class RegisterScreen extends StatefulWidget {
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
   bool isPasswordVisible = false;
   bool isConfirmPasswordVisible = false;
-
-  AuthProvider? _authProvider;
   String? _error;
   bool _loading = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_authProvider == null) {
-      AuthViewModel.create().then((provider) {
-        setState(() {
-          _authProvider = provider;
-        });
-      }).catchError((e) {
-        setState(() {
-          _error = e.toString();
-        });
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (_authProvider == null) {
-      if (_error != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error:\n$_error')),
-          );
-        });
-      }
-      return Scaffold(
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
+    final authViewModel = ref.read(authProvider.notifier);
+    final authState = ref.watch(authProvider);
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -194,7 +166,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 height: 45,
                 child: ElevatedButton(
-                  onPressed: _loading || _authProvider == null
+                  onPressed: _loading
                       ? null
                       : () async {
                           if (passwordController.text != confirmPasswordController.text) {
@@ -202,7 +174,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _error = "Passwords do not match";
                             });
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(_error!)),
+                              CustomSnackBar.error(_error!),
                             );
                             return;
                           }
@@ -210,21 +182,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             _loading = true;
                             _error = null;
                           });
-                          final success = await _authProvider!.signUp(
-                            nameController.text.trim(),
-                            emailController.text.trim(),
-                            passwordController.text,
+                          await authViewModel.register(
+                            fullName: nameController.text.trim(),
+                            email: emailController.text.trim(),
+                            phoneNumber: '', // Add phone if needed
+                            password: passwordController.text,
                           );
+                          final updatedState = ref.read(authProvider);
                           setState(() {
                             _loading = false;
-                            _error = _authProvider!.error;
+                            _error = updatedState.errorMessage;
                           });
-                          if (!success && _error != null) {
+                          if (updatedState.status == AuthStatus.error && _error != null) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(_error!)),
+                              CustomSnackBar.error(_error!),
                             );
                           }
-                          if (success) {
+                          if (updatedState.status == AuthStatus.registered) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              CustomSnackBar.success('Account created! Please log in.'),
+                            );
+                            await Future.delayed(const Duration(milliseconds: 800));
+                            if (!mounted) return;
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(

@@ -1,57 +1,30 @@
-import 'package:community/features/auth/presentation/providers/auth_provider.dart';
-import 'package:community/features/auth/presentation/view_model/auth_view_model.dart';
+import 'package:community/features/auth/presentation/state/auth_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:community/features/auth/presentation/provider/auth_provider.dart';
 import 'package:community/features/auth/presentation/pages/register_screen.dart';
 import 'package:community/features/dashboard/presentation/pages/home_screen.dart';
+import 'package:community/core/widgets/custom_snackbar.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   bool isPasswordVisible = false;
-
-  AuthProvider? _authProvider;
   String? _error;
   bool _loading = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_authProvider == null) {
-      AuthViewModel.create().then((provider) {
-        setState(() {
-          _authProvider = provider;
-        });
-      }).catchError((e) {
-        setState(() {
-          _error = e.toString();
-        });
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (_authProvider == null) {
-      if (_error != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error:\n$_error')),
-          );
-        });
-      }
-      return Scaffold(
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
+    final authViewModel = ref.read(authProvider.notifier);
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -60,7 +33,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 Row(
                   children: [
                     IconButton(
@@ -81,9 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Icon(Icons.more_vert),
                   ],
                 ),
-
                 const SizedBox(height: 20),
-
                 const Text(
                   "Welcome",
                   style: TextStyle(
@@ -100,14 +70,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.black54,
                   ),
                 ),
-
                 const SizedBox(height: 35),
-
-
-                const Text("Email or Mobile Number",
-                    style: TextStyle(fontSize: 14)),
+                const Text("Email or Mobile Number", style: TextStyle(fontSize: 14)),
                 const SizedBox(height: 8),
-
                 TextField(
                   controller: emailController,
                   decoration: InputDecoration(
@@ -120,12 +85,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
                 const Text("Password", style: TextStyle(fontSize: 14)),
                 const SizedBox(height: 8),
-
                 TextField(
                   controller: passwordController,
                   obscureText: !isPasswordVisible,
@@ -135,9 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     fillColor: Colors.grey.shade200,
                     suffixIcon: IconButton(
                       icon: Icon(
-                        isPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                        isPasswordVisible ? Icons.visibility : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
@@ -151,7 +111,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -162,34 +121,38 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
                 SizedBox(
                   width: double.infinity,
                   height: 45,
                   child: ElevatedButton(
-                    onPressed: _loading || _authProvider == null
+                    onPressed: _loading
                         ? null
                         : () async {
                             setState(() {
                               _loading = true;
                               _error = null;
                             });
-                            final success = await _authProvider!.login(
-                              emailController.text.trim(),
-                              passwordController.text,
+                            await authViewModel.login(
+                              email: emailController.text.trim(),
+                              password: passwordController.text,
                             );
+                            final updatedState = ref.read(authProvider);
                             setState(() {
                               _loading = false;
-                              _error = _authProvider!.error;
+                              _error = updatedState.errorMessage;
                             });
-                            if (!success && _error != null) {
+                            if (updatedState.status == AuthStatus.error && _error != null) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(_error!)),
+                                CustomSnackBar.error(_error!),
                               );
                             }
-                            if (success) {
+                            if (updatedState.status == AuthStatus.authenticated) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                CustomSnackBar.success('Logged in!'),
+                              );
+                              await Future.delayed(const Duration(milliseconds: 800));
+                              if (!mounted) return;
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
@@ -212,10 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                   ),
                 ),
-
-                // Error message is now shown via SnackBar
                 const SizedBox(height: 25),
-
                 Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -226,7 +186,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const RegisterScreen()),
+                              builder: (context) => const RegisterScreen(),
+                            ),
                           );
                         },
                         child: const Text(
@@ -240,7 +201,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 30),
               ],
             ),

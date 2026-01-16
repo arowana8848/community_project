@@ -1,36 +1,108 @@
-import 'package:community/main.dart';
-import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import '../../data/models/user_model.dart';
-import '../../data/datasources/local/auth_local_datasource.dart';
-import '../../data/repositories/auth_repository_impl.dart';
-import '../../domain/usecases/login_usecase.dart';
-import '../../domain/usecases/signup_usecase.dart';
-import '../providers/auth_provider.dart';
 
-class AuthViewModel {
-  static Future<AuthProvider> create() async {
-    try {
-      if (!Hive.isAdapterRegistered(0)) {
-        Hive.registerAdapter(UserModelAdapter());
-      }
-      final userBox = await Hive.openBox<UserModel>('users');
-      final sessionBox = await Hive.openBox<String>('session');
-      final localDataSource = AuthLocalDataSourceImpl(userBox, sessionBox);
-      final repository = AuthRepositoryImpl(localDataSource);
-      final loginUseCase = LoginUseCase(repository);
-      final signUpUseCase = SignUpUseCase(repository);
-      return AuthProvider(loginUseCase: loginUseCase, signUpUseCase: signUpUseCase);
-    } catch (e, st) {
-      // Optionally log error
-      debugPrint('Hive AuthViewModel error: $e\n$st');
-      rethrow;
-    }
+import 'package:community/features/auth/domain/usecases/get_current_usecase.dart';
+import 'package:community/features/auth/domain/usecases/login_usecase.dart';
+import 'package:community/features/auth/domain/usecases/logout_usecase.dart';
+import 'package:community/features/auth/domain/usecases/register_usecase.dart';
+import 'package:community/features/auth/presentation/state/auth_state.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final authViewModelProvider = NotifierProvider<AuthViewModel, AuthState>(
+  AuthViewModel.new,
+);
+
+class AuthViewModel extends Notifier<AuthState> {
+  late final RegisterUsecase _registerUsecase;
+  late final LoginUsecase _loginUsecase;
+  late final GetCurrentUserUsecase _getCurrentUserUsecase;
+  late final LogoutUsecase _logoutUsecase;
+
+  @override
+  AuthState build() {
+    _registerUsecase = ref.read(registerUsecaseProvider);
+    _loginUsecase = ref.read(loginUsecaseProvider);
+    _getCurrentUserUsecase = ref.read(getCurrentUserUsecaseProvider);
+    _logoutUsecase = ref.read(logoutUsecaseProvider);
+    return const AuthState();
   }
-}
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
-  runApp(const MyApp());
+  Future<void> register({
+    required String fullName,
+    required String email,
+    required String phoneNumber,
+    required String password,
+    
+  }) async {
+    state = state.copyWith(status: AuthStatus.loading);
+
+    final result = await _registerUsecase(
+      RegisterParams(
+        fullName: fullName,
+        email: email,
+        phoneNumber: phoneNumber,
+        password: password,
+        
+      ),
+    );
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: failure.message,
+      ),
+      (success) => state = state.copyWith(status: AuthStatus.registered),
+    );
+  }
+
+  Future<void> login({required String email, required String password}) async {
+    state = state.copyWith(status: AuthStatus.loading);
+
+    final result = await _loginUsecase(
+      LoginParams(email: email, password: password),
+    );
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: failure.message,
+      ),
+      (user) =>
+          state = state.copyWith(status: AuthStatus.authenticated, user: user),
+    );
+  }
+
+  Future<void> getCurrentUser() async {
+    state = state.copyWith(status: AuthStatus.loading);
+
+    final result = await _getCurrentUserUsecase();
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        status: AuthStatus.unauthenticated,
+        errorMessage: failure.message,
+      ),
+      (user) =>
+          state = state.copyWith(status: AuthStatus.authenticated, user: user),
+    );
+  }
+
+  Future<void> logout() async {
+    state = state.copyWith(status: AuthStatus.loading);
+
+    final result = await _logoutUsecase();
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: failure.message,
+      ),
+      (success) => state = state.copyWith(
+        status: AuthStatus.unauthenticated,
+        user: null,
+      ),
+    );
+  }
+
+  void clearError() {
+    state = state.copyWith(errorMessage: null);
+  }
 }
