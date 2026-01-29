@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 
 
 class AppBottomNavBar extends StatelessWidget {
-  final VoidCallback? onBack;
+  final VoidCallback? onFeed;
   final VoidCallback? onHome;
   final VoidCallback? onCommunities;
   final VoidCallback? onAdd;
   final VoidCallback? onProfile;
-  final int selectedIndex; 
+  final int selectedIndex;
 
   const AppBottomNavBar({
     super.key,
-    this.onBack,
+    this.onFeed,
     this.onHome,
     this.onCommunities,
     this.onAdd,
@@ -31,9 +31,9 @@ class AppBottomNavBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           IconButton(
-            onPressed: onBack,
+            onPressed: onFeed,
             icon: Icon(
-              Icons.arrow_back,
+              Icons.dynamic_feed,
               size: 30,
               color: selectedIndex == 0 ? Colors.black : Colors.white,
             ),

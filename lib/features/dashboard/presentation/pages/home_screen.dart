@@ -1,9 +1,10 @@
-import 'package:community/features/profile/presentation/pages/profile_screen.dart';
+import 'package:community/features/profile/presentation/pages/profile_screen.dart' as profile;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:community/features/explore/presentation/pages/explore_screen.dart';
-import 'package:community/features/addposrt/presentation/pages/addpost_screen.dart';
+import 'package:community/features/addpost/presentation/pages/addpost_screen.dart';
 import 'package:community/core/widgets/app_bottom_nav_bar.dart';
+import 'package:community/features/feed/presentation/pages/feed_screen.dart';
 
 const Color kTopBarColor = Color(0xFF9BB7FF);
 const Color kPageBgColor = Color(0xFFF5F7FF);
@@ -46,178 +47,212 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Scaffold(
         backgroundColor: kPageBgColor,
+
+        // 🔷 MODERN APP BAR
         appBar: AppBar(
+          leading: Navigator.canPop(context)
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                )
+              : null,
           automaticallyImplyLeading: false,
           centerTitle: true,
           elevation: 0,
-          backgroundColor: kTopBarColor,
+          backgroundColor: Colors.transparent,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF9BB7FF), Color(0xFFBBD0FF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
           title: const Text(
             "HOME",
             style: TextStyle(
               color: Colors.black,
-              fontFamily: 'Open Sans',
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
               fontSize: 22,
+              letterSpacing: 1,
             ),
           ),
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
 
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: kCardBgColor,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 2,
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundImage: AssetImage('assets/icons/profile.png'),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Welcome, User!',
-                            style: TextStyle(
-                              fontFamily: 'Open Sans',
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: kTopBarColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const ProfileScreen()),
-                              );
-                            },
-                            child: const Text(
-                              'View Profile',
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFF5F7FF), Color(0xFFE8EEFF)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+
+                // 👤 PROFILE CARD
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: kCardBgColor,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 42,
+                        backgroundImage:
+                            AssetImage('assets/icons/profile.png'),
+                      ),
+                      const SizedBox(width: 18),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Welcome back 👋',
                               style: TextStyle(
-                                fontFamily: 'Open Sans',
+                                fontSize: 14,
+                                color: Colors.grey,
                               ),
                             ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'User',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kTopBarColor,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const profile.ProfileScreen()),
+                                );
+                              },
+                              child: const Text("View Profile"),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                const Text(
+                  'Your Communities',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // 🌍 COMMUNITY CARDS
+                Column(
+                  children: communities.map((community) {
+                    int index = communities.indexOf(community);
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-
-              const Text(
-                'Your Communities',
-                style: TextStyle(
-                  fontFamily: 'Open Sans',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              Column(
-                children: communities.map((community) {
-                  int index = communities.indexOf(community);
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: kCardBgColor,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.15),
-                          spreadRadius: 1,
-                          blurRadius: 8,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundImage: AssetImage(community['image']!),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                community['title']!,
-                                style: const TextStyle(
-                                  fontFamily: 'Open Sans',
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Latest discussions and posts here',
-                                style: TextStyle(
-                                  fontFamily: 'Open Sans',
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundImage:
+                                AssetImage(community['image']!),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.red),
-                          onPressed: () => removeCommunity(index),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  community['title']!,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Latest discussions and posts here',
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded,
+                                color: Colors.redAccent),
+                            onPressed: () => removeCommunity(index),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
           ),
         ),
+
+        // 🔻 BOTTOM NAV (UNCHANGED LOGIC)
         bottomNavigationBar: AppBottomNavBar(
           selectedIndex: 1,
-          onBack: null,
+          onFeed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const FeedScreen(),
+              ),
+            );
+          },
           onHome: () {},
           onCommunities: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ExploreScreen(
-                  onJoin: addCommunity,
-                ),
+                builder: (context) => ExploreScreen(onJoin: addCommunity),
               ),
             );
           },
@@ -233,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const ProfileScreen(),
+                builder: (context) => const profile.ProfileScreen(),
               ),
             );
           },
