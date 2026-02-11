@@ -4,6 +4,7 @@ import 'package:community/features/auth/domain/usecases/login_usecase.dart';
 import 'package:community/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:community/features/auth/domain/usecases/register_usecase.dart';
 import 'package:community/features/auth/presentation/state/auth_state.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final authViewModelProvider = NotifierProvider<AuthViewModel, AuthState>(
@@ -18,10 +19,12 @@ class AuthViewModel extends Notifier<AuthState> {
 
   @override
   AuthState build() {
+    // Initialize usecases
     _registerUsecase = ref.read(registerUsecaseProvider);
     _loginUsecase = ref.read(loginUsecaseProvider);
     _getCurrentUserUsecase = ref.read(getCurrentUserUsecaseProvider);
     _logoutUsecase = ref.read(logoutUsecaseProvider);
+    // Return initial state
     return const AuthState();
   }
 

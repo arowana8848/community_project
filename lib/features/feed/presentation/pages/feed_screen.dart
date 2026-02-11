@@ -5,9 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:community/features/explore/presentation/pages/explore_screen.dart';
 import 'package:community/features/addpost/presentation/pages/addpost_screen.dart';
 import 'package:community/core/widgets/app_bottom_nav_bar.dart';
-import 'package:community/features/auth/presentation/provider/auth_provider.dart';
-import 'package:community/features/auth/presentation/pages/login_screen.dart'
-;
 
 const Color kTopBarColor = Color(0xFF9BB7FF);
 const Color kPageBgColor = Color(0xFFEFF3FF);

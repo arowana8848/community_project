@@ -1,3 +1,5 @@
+import 'package:community/core/services/storage/user_session_service.dart';
+import 'package:community/features/auth/presentation/state/auth_state.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -10,11 +12,7 @@ import 'package:community/features/feed/presentation/pages/feed_screen.dart';
 import 'package:community/features/auth/presentation/provider/auth_provider.dart';
 import 'package:community/features/auth/presentation/pages/login_screen.dart';
 import 'dart:io';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:community/core/services/storage/user_session_service.dart';
-import 'package:community/core/api/api_service.dart';
-import 'package:community/core/api/api_endpoint.dart';
+import 'package:community/features/profile/presentation/provider/profile_provider.dart';
 
 const Color kTopBarColor = Color(0xFF9BB7FF);
 const Color kPageBgColor = Color(0xFFEFF3FF);
@@ -27,9 +25,35 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authState = ref.watch(authProvider);
+    // Redirect to login if unauthenticated
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (authState.status == AuthStatus.unauthenticated) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      } else {
+        // Always fetch latest profile when this screen is shown
+        _fetchLatestProfile();
+      }
+    });
+  }
+
+  void _fetchLatestProfile() async {
+    final userSessionService = ref.read(userSessionServiceProvider);
+    final token = await userSessionService.getToken() ?? "";
+    final customerId = userSessionService.getCurrentUserId();
+    if (customerId == null || customerId.isEmpty) {
+      return;
+    }
+    await ref.read(profileProvider.notifier).fetchProfile(token, customerId);
+  }
   XFile? _pickedImage;
-  bool _isUploading = false;
-  String? _photoUrl;
 
   Future<void> _pickImage(BuildContext context, ImageSource source) async {
     if (source == ImageSource.camera) {
@@ -68,67 +92,59 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchProfile();
-  }
-
-  Future<void> _fetchProfile() async {
-    try {
+    // Fetch profile using provider
+    Future.microtask(() async {
       final userSessionService = ref.read(userSessionServiceProvider);
       final token = await userSessionService.getToken() ?? "";
-      final uri = Uri.parse('${ApiEndpoints.baseUrl}/customers/me');
-      final response = await http.get(uri, headers: {
-        if (token.isNotEmpty) 'Authorization': 'Bearer $token',
-      });
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final photoUrl = data['data']?['photoUrl'] ?? data['data']?['profilePicture'];
-        setState(() {
-          _photoUrl = (photoUrl != null && photoUrl.startsWith('/'))
-              ? 'http://10.0.2.2:3000$photoUrl'
-              : photoUrl;
-        });
+      final customerId = userSessionService.getCurrentUserId();
+      if (customerId == null || customerId.isEmpty) {
+        return;
       }
-    } catch (_) {}
+      await ref.read(profileProvider.notifier).fetchProfile(token, customerId);
+    });
   }
+
+  // Fetch logic moved to ViewModel/provider
 
   Future<void> _uploadProfilePicture(XFile imageFile) async {
-    setState(() => _isUploading = true);
-    try {
-      final userSessionService = ref.read(userSessionServiceProvider);
-      final token = await userSessionService.getToken() ?? "";
-      final response = await uploadProfilePicture(
-        imageFile: File(imageFile.path),
-        token: token,
-        baseUrl: ApiEndpoints.baseUrl,
-      );
-      if (response.statusCode == 200) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile picture updated!')),
-          );
-        }
-      } else {
-        final respStr = await response.stream.bytesToString();
-        print('Upload failed: ${response.statusCode} - $respStr');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to upload profile picture')),
-          );
-        }
-      }
-    } catch (e) {
+    final userSessionService = ref.read(userSessionServiceProvider);
+    final token = await userSessionService.getToken() ?? "";
+    final customerId = ref.read(profileProvider).profile?.id ?? userSessionService.getCurrentUserId();
+    if (customerId == null || customerId.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          const SnackBar(content: Text('Unable to upload: missing customer ID.')),
         );
       }
-    } finally {
-      setState(() => _isUploading = false);
+      return;
+    }
+
+    await ref.read(profileProvider.notifier).uploadProfilePicture(
+          File(imageFile.path),
+          token,
+          customerId,
+        );
+    if (mounted) {
+      final state = ref.read(profileProvider);
+      if (state.errorMessage == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile picture updated!')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(state.errorMessage!)),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final profileState = ref.watch(profileProvider);
+    final profile = profileState.profile;
+    final isLoading = profileState.isLoading;
+    final errorMessage = profileState.errorMessage;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: kTopBarColor,
@@ -171,14 +187,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             CircleAvatar(
                               radius: 50,
                               backgroundColor: Colors.grey.shade300,
-                              backgroundImage: _pickedImage != null
-                                ? FileImage(File(_pickedImage!.path))
-                                : (_photoUrl != null
-                                  ? NetworkImage(_photoUrl!)
-                                  : null),
-                              child: (_pickedImage == null && _photoUrl == null)
-                                ? const Icon(Icons.person, size: 50, color: Colors.white)
-                                : null,
+                              child: _pickedImage != null
+                                  ? ClipOval(
+                                      child: Image.file(
+                                        File(_pickedImage!.path),
+                                        width: 100,
+                                        height: 100,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : (profile?.photoUrl != null
+                                      ? ClipOval(
+                                          child: Image.network(
+                                            // Add cache-busting query param to always fetch latest
+                                            profile!.photoUrl! + '?t=${DateTime.now().millisecondsSinceEpoch}',
+                                            width: 100,
+                                            height: 100,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Image.asset(
+                                                'assets/icons/profile.png',
+                                                width: 100,
+                                                height: 100,
+                                                fit: BoxFit.cover,
+                                              );
+                                            },
+                                          ),
+                                        )
+                                      : const Icon(Icons.person, size: 50, color: Colors.white)),
                             ),
                             Positioned(
                               bottom: 6,
@@ -186,7 +222,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               child: GestureDetector(
                                 onTap: () {
                                   showModalBottomSheet(
-                              
                                     context: context,
                                     shape: const RoundedRectangleBorder(
                                       borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
@@ -232,9 +267,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        const Text(
-                          "username_here",
-                          style: TextStyle(
+                        // Error message display
+                        if (errorMessage != null) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              errorMessage!,
+                              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                        Text(
+                          profile?.name ?? "username_here",
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.black,
@@ -332,7 +383,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ],
               ),
             ),
-            if (_isUploading)
+            if (isLoading)
               const Positioned.fill(
                 child: Center(
                   child: CircularProgressIndicator(),

@@ -19,17 +19,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
     {
       'title': 'Global Football',
       'image': 'assets/icons/football.jpg',
-      'members': '40M+ Users'
     },
     {
       'title': 'Politics',
       'image': 'assets/icons/politics.png',
-      'members': '15M+ Users'
     },
     {
       'title': 'Science & Technology',
       'image': 'assets/icons/science.png',
-      'members': '25M+ Users'
+    },
+    {
+      'title': 'Global Cricket',
+      'image': 'assets/icons/cricket.jpg',
+    },
+    {
+      'title': 'Geography',
+      'image': 'assets/icons/geo.jpg',
+    },
+    {
+      'title': 'Meme',
+      'image': 'assets/icons/meme.webp',
     },
   ];
 
@@ -102,19 +111,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     fontSize: 17,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  community['members']!,
-                  style: const TextStyle(
-                    color: Colors.black54,
-                    fontSize: 13,
-                  ),
-                ),
                 const SizedBox(height: 12),
 
                 ElevatedButton(
-                  onPressed: () {
-                    widget.onJoin({
+                  onPressed: () async {
+                    await widget.onJoin({
                       'title': community['title']!,
                       'image': community['image']!,
                     });
