@@ -9,6 +9,7 @@ import 'package:community/features/feed/presentation/pages/feed_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:community/features/auth/presentation/provider/auth_provider.dart';
 import 'package:community/features/auth/presentation/pages/login_screen.dart';
+import 'package:community/features/community/presentation/provider/community_provider.dart';
 
 const Color kTopBarColor = Color(0xFF9BB7FF);
 const Color kPageBgColor = Color(0xFFF5F7FF);
@@ -22,25 +23,32 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  List<Map<String, String>> communities = [];
-
-  void addCommunity(Map<String, String> newCommunity) {
-    setState(() {
-      if (!communities.any((c) => c['title'] == newCommunity['title'])) {
-        communities.add(newCommunity);
-      }
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(communityProvider.notifier).fetchMyCommunities();
     });
   }
 
-  void removeCommunity(int index) {
-    setState(() {
-      communities.removeAt(index);
-    });
+  Future<void> _leaveCommunity(String communityId) async {
+    await ref.read(communityProvider.notifier).leaveCommunity(communityId);
+  }
+
+  ImageProvider _communityImage(String? image) {
+    if (image == null || image.isEmpty) {
+      return const AssetImage('assets/icons/profile.png');
+    }
+    if (image.startsWith('http')) {
+      return NetworkImage(image);
+    }
+    return AssetImage(image);
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final communityState = ref.watch(communityProvider);
     final user = authState.user;
 
     // Redirect to login if unauthenticated
@@ -61,9 +69,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Otherwise, fallback to a static asset
 
     // Error and loading state handling
-    final isLoading = authState.status == AuthStatus.loading;
-    final isError = authState.status == AuthStatus.error && authState.errorMessage != null;
-    final errorMessage = authState.errorMessage;
+    final isLoading =
+      authState.status == AuthStatus.loading || communityState.isLoading;
+    final isError = (authState.status == AuthStatus.error &&
+        authState.errorMessage != null) ||
+      communityState.errorMessage != null;
+    final errorMessage = authState.errorMessage ?? communityState.errorMessage;
+
+    final communities = communityState.myCommunities;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -227,7 +240,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // 🌍 COMMUNITY CARDS
                     Column(
                       children: communities.map((community) {
-                        int index = communities.indexOf(community);
+                        final communityId = community.id;
                         return Container(
                           margin: const EdgeInsets.only(bottom: 14),
                           padding: const EdgeInsets.all(14),
@@ -246,8 +259,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 28,
-                                backgroundImage:
-                                    AssetImage(community['image']!),
+                                backgroundImage: _communityImage(community.image),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -255,7 +267,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      community['title']!,
+                                      community.title ?? 'Community',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w600,
                                         fontSize: 16,
@@ -273,9 +285,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.close_rounded,
-                                    color: Colors.redAccent),
-                                onPressed: () => removeCommunity(index),
+                                icon: const Icon(
+                                  Icons.close_rounded,
+                                  color: Colors.redAccent,
+                                ),
+                                onPressed: communityId == null
+                                    ? null
+                                    : () => _leaveCommunity(communityId),
                               ),
                             ],
                           ),
@@ -310,7 +326,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ExploreScreen(onJoin: addCommunity),
+                builder: (context) => const ExploreScreen(),
               ),
             );
           },

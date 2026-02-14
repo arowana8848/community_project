@@ -25,6 +25,10 @@ class ApiEndpoints {
   static const String customers = '/customers';
   static const String customerLogin = '/customers/login';
   static const String customerRegister = '/customers/signup';
+  // ============ Community Endpoints ============
+  static const String communities = '/communities';
+  static const String communityMy = '/communities/my';
+  static String communityJoin(String id) => '/communities/$id/join';
   // static String customerById(String id) => '/customers/$id';
   // // ============ Item Endpoints ============
   // static const String items = '/items';

@@ -57,7 +57,7 @@ class FeedScreen extends ConsumerWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ExploreScreen(onJoin: (c) {}),
+                builder: (context) => const ExploreScreen(),
               ),
             );
           },

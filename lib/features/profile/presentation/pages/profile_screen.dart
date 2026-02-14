@@ -407,7 +407,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ExploreScreen(onJoin: (c) {}),
+                builder: (context) => const ExploreScreen(),
               ),
             );
           },

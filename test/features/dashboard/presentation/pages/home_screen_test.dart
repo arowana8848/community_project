@@ -1,7 +1,14 @@
 import 'package:community/core/services/storage/user_session_service.dart';
+import 'package:community/features/auth/presentation/provider/auth_provider.dart';
+import 'package:community/features/auth/presentation/state/auth_state.dart';
 import 'package:community/features/dashboard/presentation/pages/home_screen.dart';
 import 'package:community/features/explore/presentation/pages/explore_screen.dart';
 import 'package:community/features/profile/presentation/pages/profile_screen.dart';
+import 'package:community/features/community/presentation/provider/community_provider.dart';
+import 'package:community/features/community/presentation/view_model/community_view_model.dart';
+import 'package:community/features/profile/presentation/provider/profile_provider.dart';
+import 'package:community/features/profile/presentation/view_model/profile_view_model.dart';
+import 'package:community/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,10 +45,31 @@ class FakeUserSessionService implements UserSessionService {
   Future<void> updateUserProfilePicture(String pictureFileName) async {}
 
   @override
-  Future<String?> getToken() async => null;
+  Future<String?> getToken() async => 'mock-token';
 
   @override
   Future<void> saveToken(String token) async {}
+}
+
+class MockCommunityViewModel extends CommunityViewModel {
+  @override
+  CommunityState build() {
+    return CommunityState();
+  }
+}
+
+class MockProfileViewModel extends ProfileViewModel {
+  @override
+  ProfileState build() {
+    return ProfileState(isLoading: false);
+  }
+}
+
+class MockAuthViewModel extends AuthViewModel {
+  @override
+  AuthState build() {
+    return AuthState(status: AuthStatus.authenticated);
+  }
 }
 
 void main() {
@@ -50,6 +78,9 @@ void main() {
       ProviderScope(
         overrides: [
           userSessionServiceProvider.overrideWithValue(FakeUserSessionService()),
+          communityProvider.overrideWith(() => MockCommunityViewModel()),
+          profileProvider.overrideWith(() => MockProfileViewModel()),
+          authProvider.overrideWith(() => MockAuthViewModel()),
         ],
         child: const MaterialApp(
           home: HomeScreen(),

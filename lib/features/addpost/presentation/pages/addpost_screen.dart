@@ -242,7 +242,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ExploreScreen(onJoin: (c) {}),
+                builder: (context) => const ExploreScreen(),
               ),
             );
           },

@@ -2,64 +2,44 @@ import 'package:community/features/profile/presentation/pages/profile_screen.dar
 import 'package:flutter/material.dart';
 import 'package:community/core/widgets/app_bottom_nav_bar.dart';
 import 'package:community/features/feed/presentation/pages/feed_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:community/features/community/presentation/provider/community_provider.dart';
+import 'package:community/features/community/domain/entities/community_entity.dart';
 
-class ExploreScreen extends StatefulWidget {
-  final Function(Map<String, String>) onJoin;
-
-  const ExploreScreen({super.key, required this.onJoin});
+class ExploreScreen extends ConsumerStatefulWidget {
+  const ExploreScreen({super.key});
 
   @override
-  State<ExploreScreen> createState() => _ExploreScreenState();
+  ConsumerState<ExploreScreen> createState() => _ExploreScreenState();
 }
 
-class _ExploreScreenState extends State<ExploreScreen> {
+class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   final TextEditingController _searchController = TextEditingController();
-
-  List<Map<String, String>> allCommunities = [
-    {
-      'title': 'Global Football',
-      'image': 'assets/icons/football.jpg',
-    },
-    {
-      'title': 'Politics',
-      'image': 'assets/icons/politics.png',
-    },
-    {
-      'title': 'Science & Technology',
-      'image': 'assets/icons/science.png',
-    },
-    {
-      'title': 'Global Cricket',
-      'image': 'assets/icons/cricket.jpg',
-    },
-    {
-      'title': 'Geography',
-      'image': 'assets/icons/geo.jpg',
-    },
-    {
-      'title': 'Meme',
-      'image': 'assets/icons/meme.webp',
-    },
-  ];
-
-  List<Map<String, String>> filteredCommunities = [];
 
   @override
   void initState() {
     super.initState();
-    filteredCommunities = allCommunities;
-  }
-
-  void _searchCommunity(String query) {
-    setState(() {
-      filteredCommunities = allCommunities
-          .where((c) =>
-              c['title']!.toLowerCase().contains(query.toLowerCase()))
-          .toList();
+    Future.microtask(() {
+      ref.read(communityProvider.notifier).fetchCommunities();
     });
   }
 
-  Widget _communityCard(Map<String, String> community) {
+  void _searchCommunity(String query) {
+    setState(() {});
+  }
+
+  ImageProvider _communityImage(String? image) {
+    if (image == null || image.isEmpty) {
+      return const AssetImage('assets/icons/profile.png');
+    }
+    if (image.startsWith('http')) {
+      return NetworkImage(image);
+    }
+    return AssetImage(image);
+  }
+
+  Widget _communityCard(CommunityEntity community) {
+    final communityId = community.id;
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.all(16),
@@ -90,12 +70,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(18),
-              child: Image.asset(
-                community['image']!,
-                width: 70,
-                height: 70,
-                fit: BoxFit.cover,
-              ),
+                child: Image(
+                  image: _communityImage(community.image),
+                  width: 70,
+                  height: 70,
+                  fit: BoxFit.cover,
+                ),
             ),
           ),
           const SizedBox(width: 16),
@@ -105,7 +85,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  community['title']!,
+                  community.title ?? 'Community',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 17,
@@ -115,11 +95,43 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
                 ElevatedButton(
                   onPressed: () async {
-                    await widget.onJoin({
-                      'title': community['title']!,
-                      'image': community['image']!,
-                    });
-                    Navigator.pop(context);
+                    if (communityId == null) {
+                      return;
+                    }
+                    final success = await ref
+                        .read(communityProvider.notifier)
+                        .joinCommunity(communityId);
+                    if (!mounted) {
+                      return;
+                    }
+                    if (success) {
+                      Navigator.pop(context);
+                    } else {
+                      final message = ref.read(communityProvider).errorMessage;
+                      if (message != null) {
+                        if (message.toLowerCase().contains('already joined')) {
+                          // Show dialog for already joined
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Already Joined'),
+                              content: Text(message),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('OK'),
+                                ),
+                              ],
+                            ),
+                          );
+                        } else {
+                          // Show snackbar for other errors
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(message)),
+                          );
+                        }
+                      }
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
@@ -149,6 +161,15 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final communityState = ref.watch(communityProvider);
+    final query = _searchController.text.trim().toLowerCase();
+    final allCommunities = communityState.allCommunities;
+    final filteredCommunities = query.isEmpty
+        ? allCommunities
+        : allCommunities
+            .where((c) => (c.title ?? '').toLowerCase().contains(query))
+            .toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFFEFF3FF),
 
@@ -207,10 +228,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
             /// 📜 COMMUNITY LIST
             Expanded(
-              child: ListView(
-                children:
-                    filteredCommunities.map(_communityCard).toList(),
-              ),
+              child: communityState.isLoading && allCommunities.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView(
+                      children:
+                          filteredCommunities.map(_communityCard).toList(),
+                    ),
             ),
           ],
         ),
