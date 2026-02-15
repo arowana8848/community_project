@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:community/features/profile/presentation/provider/profile_provider.dart';
-import 'package:community/features/profile/domain/entities/profile_entity.dart';
 import 'package:community/features/profile/data/repositories/profile_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

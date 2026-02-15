@@ -1,5 +1,4 @@
 import 'package:community/features/dashboard/presentation/provider/dashboard_provider.dart';
-import 'package:community/features/dashboard/domain/entities/dashboard_user_entity.dart';
 import 'package:community/features/dashboard/data/repositories/dashboard_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

@@ -25,7 +25,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final authViewModel = ref.read(authProvider.notifier);
-    final authState = ref.watch(authProvider);
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -193,6 +192,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             _loading = false;
                             _error = updatedState.errorMessage;
                           });
+                          if (!context.mounted) {
+                            return;
+                          }
                           if (updatedState.status == AuthStatus.error && _error != null) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               CustomSnackBar.error(_error!),
@@ -203,7 +205,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               CustomSnackBar.success('Account created! Please log in.'),
                             );
                             await Future.delayed(const Duration(milliseconds: 800));
-                            if (!mounted) return;
+                            if (!context.mounted) {
+                              return;
+                            }
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
