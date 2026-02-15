@@ -9,6 +9,8 @@ import 'package:community/features/explore/presentation/pages/explore_screen.dar
 import 'package:community/features/addpost/presentation/pages/addpost_screen.dart';
 import 'package:community/core/widgets/app_bottom_nav_bar.dart';
 import 'package:community/features/feed/presentation/pages/feed_screen.dart';
+import 'package:community/features/feed/data/local/post_store.dart';
+import 'package:community/features/feed/domain/entities/community_model.dart';
 import 'package:community/features/auth/presentation/provider/auth_provider.dart';
 import 'package:community/features/auth/presentation/pages/login_screen.dart';
 import 'dart:io';
@@ -55,14 +57,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
   XFile? _pickedImage;
 
-  Future<void> _pickImage(BuildContext context, ImageSource source) async {
+  Future<void> _pickImage(ImageSource source) async {
+    final messenger = ScaffoldMessenger.of(context);
     if (source == ImageSource.camera) {
       var status = await Permission.camera.status;
+      if (!context.mounted) {
+        return;
+      }
       if (status.isDenied || status.isRestricted) {
         status = await Permission.camera.request();
+        if (!context.mounted) {
+          return;
+        }
       }
       if (status.isPermanentlyDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        if (!context.mounted) {
+          return;
+        }
+        messenger.showSnackBar(
           SnackBar(
             content: const Text('Camera permission permanently denied. Please enable it in app settings.'),
             action: SnackBarAction(
@@ -74,7 +86,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         return;
       }
       if (!status.isGranted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        if (!context.mounted) {
+          return;
+        }
+        messenger.showSnackBar(
           const SnackBar(content: Text('Camera permission is required to take a photo.')),
         );
         return;
@@ -82,6 +97,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: source);
+    if (!context.mounted) {
+      return;
+    }
     if (pickedFile != null) {
       setState(() {
         _pickedImage = pickedFile;
@@ -200,7 +218,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       ? ClipOval(
                                           child: Image.network(
                                             // Add cache-busting query param to always fetch latest
-                                            profile!.photoUrl! + '?t=${DateTime.now().millisecondsSinceEpoch}',
+                                            '${profile!.photoUrl}?t=${DateTime.now().millisecondsSinceEpoch}',
                                             width: 100,
                                             height: 100,
                                             fit: BoxFit.cover,
@@ -236,7 +254,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                               title: const Text('Take Photo'),
                                               onTap: () async {
                                                 Navigator.pop(context);
-                                                await _pickImage(context, ImageSource.camera);
+                                                await _pickImage(ImageSource.camera);
                                               },
                                             ),
                                             ListTile(
@@ -244,7 +262,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                               title: const Text('Choose from Gallery'),
                                               onTap: () async {
                                                 Navigator.pop(context);
-                                                await _pickImage(context, ImageSource.gallery);
+                                                await _pickImage(ImageSource.gallery);
                                               },
                                             ),
                                           ],
@@ -278,7 +296,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              errorMessage!,
+                              errorMessage,
                               style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -394,10 +412,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         bottomNavigationBar: AppBottomNavBar(
           selectedIndex: 4,
           onFeed: () {
+            final CommunityModel defaultCommunity =
+                selectedCommunityStore.value;
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const FeedScreen(),
+                builder: (context) => FeedScreen(
+                  communityId: defaultCommunity.id,
+                  communityName: defaultCommunity.name,
+                ),
               ),
             );
           },

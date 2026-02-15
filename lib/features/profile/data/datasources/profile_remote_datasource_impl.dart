@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:community/features/profile/domain/entities/profile_entity.dart';
+import 'package:flutter/foundation.dart';
 import 'package:community/features/profile/data/datasources/profile_remote_datasource.dart';
 import 'package:community/core/api/api_endpoint.dart';
 import 'package:http/http.dart' as http;
@@ -34,11 +35,11 @@ class ProfileRemoteDatasourceImpl implements IProfileRemoteDatasource {
           photoUrl: normalizedPhotoUrl,
         );
       } else {
-        print('Fetch profile failed: ${response.statusCode} ${response.body}');
+        debugPrint('Fetch profile failed: ${response.statusCode} ${response.body}');
         return null;
       }
     } catch (e) {
-      print('Fetch profile error: ${e.toString()}');
+      debugPrint('Fetch profile error: ${e.toString()}');
       return null;
     }
   }
@@ -53,16 +54,16 @@ class ProfileRemoteDatasourceImpl implements IProfileRemoteDatasource {
 
       var response = await request.send();
       if (response.statusCode == 200) {
-        print('Upload successful');
+        debugPrint('Upload successful');
         return true;
       } else {
-        print('Upload failed: ${response.statusCode}');
+        debugPrint('Upload failed: ${response.statusCode}');
         final respStr = await response.stream.bytesToString();
-        print('Response body: $respStr');
+        debugPrint('Response body: $respStr');
         return false;
       }
     } catch (e) {
-      print('Upload error: ${e.toString()}');
+      debugPrint('Upload error: ${e.toString()}');
       return false;
     }
   }

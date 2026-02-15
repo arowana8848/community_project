@@ -2,9 +2,11 @@ import 'package:community/features/profile/presentation/pages/profile_screen.dar
 import 'package:flutter/material.dart';
 import 'package:community/core/widgets/app_bottom_nav_bar.dart';
 import 'package:community/features/feed/presentation/pages/feed_screen.dart';
+import 'package:community/features/feed/data/local/post_store.dart';
+import 'package:community/features/feed/domain/entities/community_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:community/features/community/presentation/provider/community_provider.dart';
-import 'package:community/features/community/domain/entities/community_entity.dart';
+import 'package:community/features/explore/domain/entities/explore_community_entity.dart';
+import 'package:community/features/explore/presentation/providers/explore_provider.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
   const ExploreScreen({super.key});
@@ -20,7 +22,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(communityProvider.notifier).fetchCommunities();
+      ref.read(exploreProvider.notifier).fetchCommunities();
     });
   }
 
@@ -38,7 +40,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     return AssetImage(image);
   }
 
-  Widget _communityCard(CommunityEntity community) {
+  Widget _communityCard(ExploreCommunityEntity community) {
     final communityId = community.id;
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
@@ -50,7 +52,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -63,7 +65,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 8,
                 )
               ],
@@ -99,15 +101,15 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                       return;
                     }
                     final success = await ref
-                        .read(communityProvider.notifier)
-                        .joinCommunity(communityId);
+                      .read(exploreProvider.notifier)
+                      .joinCommunity(communityId);
                     if (!mounted) {
                       return;
                     }
                     if (success) {
-                      Navigator.pop(context);
+                      Navigator.pop(context, true);
                     } else {
-                      final message = ref.read(communityProvider).errorMessage;
+                      final message = ref.read(exploreProvider).errorMessage;
                       if (message != null) {
                         if (message.toLowerCase().contains('already joined')) {
                           // Show dialog for already joined
@@ -136,7 +138,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     elevation: 5,
-                    shadowColor: Colors.blue.withOpacity(0.4),
+                    shadowColor: Colors.blue.withValues(alpha: 0.4),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -161,9 +163,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final communityState = ref.watch(communityProvider);
+    final communityState = ref.watch(exploreProvider);
     final query = _searchController.text.trim().toLowerCase();
-    final allCommunities = communityState.allCommunities;
+    final allCommunities = communityState.communities;
     final filteredCommunities = query.isEmpty
         ? allCommunities
         : allCommunities
@@ -206,7 +208,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                   ),
                 ],
@@ -242,10 +244,15 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       bottomNavigationBar: AppBottomNavBar(
         selectedIndex: 3,
         onFeed: () {
+          final CommunityModel defaultCommunity =
+              selectedCommunityStore.value;
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const FeedScreen(),
+              builder: (context) => FeedScreen(
+                communityId: defaultCommunity.id,
+                communityName: defaultCommunity.name,
+              ),
             ),
           );
         },

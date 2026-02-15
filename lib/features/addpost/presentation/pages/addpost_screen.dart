@@ -3,20 +3,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:community/features/explore/presentation/pages/explore_screen.dart';
 import 'package:community/core/widgets/app_bottom_nav_bar.dart';
+import 'package:community/features/feed/data/local/post_store.dart';
+import 'package:community/features/feed/domain/entities/community_model.dart';
 import 'package:community/features/feed/presentation/pages/feed_screen.dart';
+import 'package:community/features/community/presentation/provider/community_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:community/features/feed/presentation/providers/feed_provider.dart';
 
 const Color kTopBarColor = Color(0xFF9BB7FF);
 const Color kPageBgColor = Color(0xFFEFF3FF);
 
-class AddPostScreen extends StatefulWidget {
+class AddPostScreen extends ConsumerStatefulWidget {
   const AddPostScreen({super.key});
 
   @override
-  State<AddPostScreen> createState() => _AddPostScreenState();
+  ConsumerState<AddPostScreen> createState() => _AddPostScreenState();
 }
 
-class _AddPostScreenState extends State<AddPostScreen> {
+class _AddPostScreenState extends ConsumerState<AddPostScreen> {
   final TextEditingController _postController = TextEditingController();
+  String? _selectedCommunityId;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(communityProvider.notifier).fetchMyCommunities();
+    });
+  }
 
   @override
   void dispose() {
@@ -36,7 +50,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 6,
               )
             ],
@@ -52,8 +66,25 @@ class _AddPostScreenState extends State<AddPostScreen> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
+    final communityState = ref.watch(communityProvider);
+    final joinedCommunities = communityState.myCommunities;
+    final dropdownItems = joinedCommunities
+        .where((community) => community.id != null && community.id!.isNotEmpty)
+        .map(
+          (community) => DropdownMenuItem<String>(
+            value: community.id,
+            child: Text(community.title ?? 'Community'),
+          ),
+        )
+        .toList();
+
+    final selectedValue = dropdownItems
+            .any((item) => item.value == _selectedCommunityId)
+        ? _selectedCommunityId
+        : null;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: kTopBarColor,
@@ -89,10 +120,10 @@ class _AddPostScreenState extends State<AddPostScreen> {
             child: Column(
               children: [
 
-                /// 🔵 SELECT COMMUNITY BUTTON
+                /// 🔵 SELECT COMMUNITY DROPDOWN
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF6A9CFF), Color(0xFF9BB7FF)],
@@ -100,20 +131,31 @@ class _AddPostScreenState extends State<AddPostScreen> {
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.blue.withOpacity(0.3),
+                        color: Colors.blue.withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 5),
                       ),
                     ],
                   ),
-                  child: const Center(
-                    child: Text(
-                      "Select a community",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: selectedValue,
+                      dropdownColor: Colors.white,
+                      iconEnabledColor: Colors.white,
+                      hint: Text(
+                        dropdownItems.isEmpty
+                            ? 'Join a community first'
+                            : 'Select a community',
+                        style: const TextStyle(color: Colors.white),
                       ),
+                      items: dropdownItems,
+                      onChanged: dropdownItems.isEmpty
+                          ? null
+                          : (value) {
+                              setState(() {
+                                _selectedCommunityId = value;
+                              });
+                            },
                     ),
                   ),
                 ),
@@ -125,11 +167,11 @@ class _AddPostScreenState extends State<AddPostScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withValues(alpha: 0.85),
                       borderRadius: BorderRadius.circular(26),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
+                          color: Colors.black.withValues(alpha: 0.06),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -197,12 +239,52 @@ class _AddPostScreenState extends State<AddPostScreen> {
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () {
-                              print(_postController.text);
+                              final message = _postController.text.trim();
+                              if (_selectedCommunityId == null ||
+                                  _selectedCommunityId!.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Please select a community.'),
+                                  ),
+                                );
+                                return;
+                              }
+                              if (message.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Post cannot be empty.'),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              ref
+                                  .read(feedProvider.notifier)
+                                  .createPost(
+                                    communityId: _selectedCommunityId!,
+                                    text: message,
+                                  )
+                                  .then((_) async {
+                                await ref
+                                    .read(feedProvider.notifier)
+                                    .fetchPosts(_selectedCommunityId!);
+                                if (!mounted) {
+                                  return;
+                                }
+                                Navigator.pop(context);
+                              }).catchError((error) {
+                                if (!mounted) {
+                                  return;
+                                }
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(error.toString())),
+                                );
+                              });
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,
                               elevation: 6,
-                              shadowColor: Colors.blue.withOpacity(0.5),
+                              shadowColor: Colors.blue.withValues(alpha: 0.5),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),
@@ -230,10 +312,15 @@ class _AddPostScreenState extends State<AddPostScreen> {
         bottomNavigationBar: AppBottomNavBar(
           selectedIndex: 2,
           onFeed: () {
+            final CommunityModel defaultCommunity =
+                selectedCommunityStore.value;
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const FeedScreen(),
+                builder: (context) => FeedScreen(
+                  communityId: defaultCommunity.id,
+                  communityName: defaultCommunity.name,
+                ),
               ),
             );
           },

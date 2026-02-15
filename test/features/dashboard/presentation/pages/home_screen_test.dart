@@ -24,9 +24,6 @@ class FakeUserSessionService implements UserSessionService {
   String? getCurrentUserEmail() => 'test@gmail.com';
 
   @override
-  String? getCurrentUserProfilePicture() => '';
-
-  @override
   Future<void> clearSession() async {}
 
   @override
@@ -39,10 +36,7 @@ class FakeUserSessionService implements UserSessionService {
   bool isLoggedIn() => true;
 
   @override
-  Future<void> saveUserSession({required String userId, required String email, required String fullName, String? phoneNumber, String? profilePicture}) async {}
-
-  @override
-  Future<void> updateUserProfilePicture(String pictureFileName) async {}
+  Future<void> saveUserSession({required String userId, required String email, required String fullName, String? phoneNumber}) async {}
 
   @override
   Future<String?> getToken() async => 'mock-token';

@@ -4,7 +4,6 @@ import 'package:community/features/auth/domain/usecases/login_usecase.dart';
 import 'package:community/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:community/features/auth/domain/usecases/register_usecase.dart';
 import 'package:community/features/auth/presentation/state/auth_state.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final authViewModelProvider = NotifierProvider<AuthViewModel, AuthState>(

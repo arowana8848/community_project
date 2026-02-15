@@ -6,6 +6,8 @@ import 'package:community/features/explore/presentation/pages/explore_screen.dar
 import 'package:community/features/addpost/presentation/pages/addpost_screen.dart';
 import 'package:community/core/widgets/app_bottom_nav_bar.dart';
 import 'package:community/features/feed/presentation/pages/feed_screen.dart';
+import 'package:community/features/feed/data/local/post_store.dart';
+import 'package:community/features/feed/domain/entities/community_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:community/features/auth/presentation/provider/auth_provider.dart';
 import 'package:community/features/auth/presentation/pages/login_screen.dart';
@@ -35,6 +37,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await ref.read(communityProvider.notifier).leaveCommunity(communityId);
   }
 
+  void _openCommunityFeed(String communityId, String communityName) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FeedScreen(
+          communityId: communityId,
+          communityName: communityName,
+        ),
+      ),
+    );
+  }
+
   ImageProvider _communityImage(String? image) {
     if (image == null || image.isEmpty) {
       return const AssetImage('assets/icons/profile.png');
@@ -62,11 +76,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
     });
 
-    // Placeholder for actual photo URL logic
-    String? photoUrl;
-    // If you extend AuthEntity to include photoUrl, use that here
-    // photoUrl = user?.photoUrl;
-    // Otherwise, fallback to a static asset
 
     // Error and loading state handling
     final isLoading =
@@ -154,7 +163,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -162,11 +171,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       child: Row(
                         children: [
-                          CircleAvatar(
+                          const CircleAvatar(
                             radius: 42,
-                            backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
-                                ? NetworkImage(photoUrl)
-                                : const AssetImage('assets/icons/profile.png') as ImageProvider,
+                            backgroundImage: AssetImage('assets/icons/profile.png'),
                           ),
                           const SizedBox(width: 18),
                           Expanded(
@@ -223,7 +230,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          errorMessage!,
+                          errorMessage,
                           style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
                         ),
                       ),
@@ -239,61 +246,73 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 16),
                     // 🌍 COMMUNITY CARDS
                     Column(
-                      children: communities.map((community) {
-                        final communityId = community.id;
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 14),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
-                                blurRadius: 15,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
+                      children: communities.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final community = entry.value;
+                        final rawCommunityId = community.id;
+                        final communityName = community.title ?? 'Community';
+                        final communityId =
+                            rawCommunityId ?? 'community-$index';
+                        return InkWell(
+                          onTap: () => _openCommunityFeed(
+                            communityId,
+                            communityName,
                           ),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 28,
-                                backgroundImage: _communityImage(community.image),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      community.title ?? 'Community',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    const Text(
-                                      'Latest discussions and posts here',
-                                      style: TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 14),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 8),
                                 ),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.close_rounded,
-                                  color: Colors.redAccent,
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 28,
+                                  backgroundImage: _communityImage(community.image),
                                 ),
-                                onPressed: communityId == null
-                                    ? null
-                                    : () => _leaveCommunity(communityId),
-                              ),
-                            ],
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        communityName,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      const Text(
+                                        'Latest discussions and posts here',
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.close_rounded,
+                                    color: Colors.redAccent,
+                                  ),
+                                  onPressed: rawCommunityId == null
+                                      ? null
+                                      : () => _leaveCommunity(rawCommunityId),
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       }).toList(),
@@ -314,21 +333,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         bottomNavigationBar: AppBottomNavBar(
           selectedIndex: 1,
           onFeed: () {
+            final CommunityModel defaultCommunity =
+                selectedCommunityStore.value;
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const FeedScreen(),
+                builder: (context) => FeedScreen(
+                  communityId: defaultCommunity.id,
+                  communityName: defaultCommunity.name,
+                ),
               ),
             );
           },
           onHome: () {},
-          onCommunities: () {
-            Navigator.push(
+          onCommunities: () async {
+            final didJoin = await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => const ExploreScreen(),
               ),
             );
+            if (!context.mounted) {
+              return;
+            }
+            if (didJoin == true) {
+              ref.read(communityProvider.notifier).fetchMyCommunities();
+            }
           },
           onAdd: () {
             Navigator.push(
